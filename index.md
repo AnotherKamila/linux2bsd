@@ -10,6 +10,6 @@ layout: default
 {% assign cmds     = kv[1] %}
 ## {{category}}
 {% for cmd in cmds %}
-* {{cmd[0]}} → {{cmd[1]}}
+* `{{cmd[0]}}` → `{{cmd[1]}}`
 {% endfor %}
 {% endfor %}
