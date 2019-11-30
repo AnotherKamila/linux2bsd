@@ -1,0 +1,2 @@
+lspci: pciconf -lv
+lsusb: usbconfig

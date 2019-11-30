@@ -1,0 +1,8 @@
+adduser: bsdconfig usermgmt
+adduser: pw useradd
+useradd: bsdconfig usermgmt
+useradd: pw useradd
+usermod: bsdconfig usermgmt
+usermod: pw usermod
+userdel: bsdconfig userdel
+userdel: pw userdel
