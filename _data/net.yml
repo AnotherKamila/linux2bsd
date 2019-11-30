@@ -1,4 +1,0 @@
-route: netstat -r
-"route -n": netstat -rn
-"netstat -l": sockstat -l
-ip: ifconfig

@@ -1,0 +1,3 @@
+#linux,freebsd
+lspci,pciconf -lv
+lsusb,usbconfig
