@@ -6,3 +6,6 @@ usermod: bsdconfig usermgmt
 usermod: pw usermod
 userdel: bsdconfig userdel
 userdel: pw userdel
+apt: pkg
+rpm: pkg
+yum: pkg
