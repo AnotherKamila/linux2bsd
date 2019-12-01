@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import fnmatch
 import os
 import queue
@@ -50,7 +51,7 @@ def translate(command, data_dir=DATA_DIR, to='bsd'):
         score = score_match(command, k)
         if score > 0:
             candidates.append(Candidate(score=score, match=k, result=v))
-    return candidates
+    return sorted(candidates, reverse=True)
 
 def get_categories(data_dir):
     files = [ f for f in os.listdir(data_dir) if f.endswith('.csv') ]
@@ -77,8 +78,9 @@ def get_categories(data_dir):
 @click.argument('command', nargs=-1)
 def linux2bsd(command, data_dir, to, regex, verbose, limit,
               interactive, show_category, list_categories):
-    """TODO something"""
+    """Translate common commands between Linux and BSD equivalents"""
     # This is ugly, but it works:
+    # but TODO https://click.palletsprojects.com/en/7.x/options/#callbacks-and-eager-options
     if list_categories:
         click.echo('\n'.join(get_categories(data_dir)))
 
@@ -99,45 +101,66 @@ def linux2bsd(command, data_dir, to, regex, verbose, limit,
         if not regex: command = fnmatch.translate(command).replace(r'\Z', '')
         candidates = translate(command, data_dir=data_dir, to=to)[:limit]
 
-        already_printed = set()
-        for c in sorted(candidates, reverse=True):
+        # TODO only print unique
+        for i, c in enumerate(candidates):
             if verbose:
                 click.echo(f'{c.match: <16}\t{c.result: <16}\t{int(c.score):2}')
             else:
-                if not c.result in already_printed:
-                    click.echo(c.result)
-                    already_printed.add(c.result)
+                click.echo(f'{i+1:2} {c.result}' if interactive else f'{c.result}')
 
+        # TODO this is the worst code I've written in a looong time :D
         if interactive:
-            if len(candidates) == 1:
-                result = candidates[0].result
+
+            # TODO attrs + validator for text format
+            class PromptChoice(namedtuple('PromptChoice', ('text', 'handler'))):
+                @property
+                def key(self):
+                    return self.text[1].lower()
+
+            choices = {}  # key => PromptChoice
+            prompt_for = []  # list of keys
+            some_other_dict = {}
+            for i, candidate in enumerate(candidates):
+                my_choices = []
                 # TODO move to its own function
-                command, *args = [arg.strip() for arg in result.split('#')[0].split()]
+                command, *args = [arg.strip() for arg in candidate.result.split('#')[0].split()]
 
                 # expecting format like: whoami(1)
                 manpage = None
-                if command[-3] == '(' and command[-1] == ')':
+                if len(command) > 3 and command[-3] == '(' and command[-1] == ')':
                     command, manpage = command[:-3], int(command[-2])
 
                 executable = shutil.which(command)
 
-                # TODO attrs + validator for text format
-                class PromptChoice(namedtuple('PromptChoice', ('text', 'handler'))):
-                    @property
-                    def key(self):
-                        return self.text[1]
+                def runcmd(cmd):
+                    subprocess.call(cmd)
 
-                choices = []
-                if manpage: choices.append(PromptChoice('[m]an page', lambda: subprocess.call(['man', str(manpage), command])))
-                if executable: choices.append(PromptChoice('[r]un', lambda: subprocess.call([command]+args)))
+                if manpage:
+                    my_choices.append(PromptChoice('[m]an page', lambda: subprocess.call(['man', str(manpage), command])))
+                if executable:
+                    my_choices.append(PromptChoice('[r]un', lambda: runcmd([command]+args)))
 
-                if choices:
-                    choices.append(PromptChoice('[q]uit', lambda: None))
-                    res = click.prompt(', '.join(p.text for p in choices), default='q',
-                                type=click.Choice([p.key for p in choices], case_sensitive=False),
-                                prompt_suffix='? ', show_choices=False)
-                    handler = next(c.handler for c in choices if c.key == res)
-                    handler()
+                for c in my_choices:
+                    if len(candidates) > 1:
+                        choices[f'{i+1}{c.key}'] = c
+                        if not c.key in prompt_for:
+                            prompt_for.append(c.key)
+                    else:
+                        choices[c.key] = c
+                        prompt_for.append(c.key)
+                some_other_dict.update({c.key: c for c in my_choices})
+
+            if choices:
+                choices['q'] = PromptChoice('[Q]uit', lambda: None)
+                some_other_dict['q'] = choices['q']
+                prompt_for.append('q')
+                prompt_text =  'number + ' if len(candidates) > 1 else ''
+                prompt_text += ', '.join(some_other_dict[k].text for k in prompt_for)
+                res = click.prompt(prompt_text, default='q',
+                                    type=click.Choice(choices.keys(), case_sensitive=False),
+                                    prompt_suffix='? ', show_choices=False, show_default=False)
+                handler = choices[res].handler
+                handler()
 
 
 if __name__ == '__main__':

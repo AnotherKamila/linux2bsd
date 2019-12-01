@@ -1,12 +1,12 @@
 #linux,freebsd
-adduser,bsdconfig usermgmt
-adduser,pw useradd
-useradd,bsdconfig usermgmt
-useradd,pw useradd
-usermod,bsdconfig usermgmt
-usermod,pw usermod
-userdel,bsdconfig userdel
-userdel,pw userdel
+adduser,bsdconfig(8) usermgmt
+adduser,pw(8) useradd
+useradd,bsdconfig(8) usermgmt
+useradd,pw(8) useradd
+usermod,bsdconfig(8) usermgmt
+usermod,pw(8) usermod
+userdel,bsdconfig(8) userdel
+userdel,pw(8) userdel
 apt,pkg(8)
 yum,pkg(8)
 rpm,pkg(8)
@@ -19,7 +19,7 @@ lvcreate,zpool(8)
 mkfs,newfs(8)
 mkfs,zfs(8)
 mkfs,zpool(8)
-fsck,zpool scrub
+fsck,zpool(8) scrub
 resize2fs,growfs(8)
 lsof,fstat(1)
 apt-get upgrade,freebsd-update(8)
