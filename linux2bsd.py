@@ -2,6 +2,8 @@ import fnmatch
 import os
 import queue
 import re
+import shutil
+import subprocess
 from collections import namedtuple
 
 import click
@@ -62,6 +64,8 @@ def get_categories(data_dir):
               help="Interpret the pattern as a regex (default: shell-like)")
 @click.option('--verbose/--quiet', '-v/-q', default=False,
               help="Print detailed info about the matches")
+@click.option('--interactive/--non-interactive', '-i/-n', default=True,
+              help="Prompt to run command or show the man page")
 @click.option('--show-category', '-s', is_flag=True,
               help='Show a table for the given category (or categories)')
 @click.option('--list-categories', '-l', is_flag=True,
@@ -72,17 +76,21 @@ def get_categories(data_dir):
               default=DATA_DIR, help='Path to command data files')
 @click.argument('command', nargs=-1)
 def linux2bsd(command, data_dir, to, regex, verbose, limit,
-              show_category, list_categories):
+              interactive, show_category, list_categories):
     """TODO something"""
     # This is ugly, but it works:
     if list_categories:
         click.echo('\n'.join(get_categories(data_dir)))
+
     if show_category:
+        if command == ('all',): command = get_categories(data_dir)
         for category in command:
             click.echo(category.upper())
             for k, v in load_category(data_dir, category):
                 if to != DATA_FILES_TO: k, v = v, k
                 click.echo(f'{k: <16}\t{v: <16}')
+            click.echo()
+
     else:
         # TODO if command empty and running interactively, prompt
         # TODO tokenization and things
@@ -99,6 +107,37 @@ def linux2bsd(command, data_dir, to, regex, verbose, limit,
                 if not c.result in already_printed:
                     click.echo(c.result)
                     already_printed.add(c.result)
+
+        if interactive:
+            if len(candidates) == 1:
+                result = candidates[0].result
+                # TODO move to its own function
+                command, *args = [arg.strip() for arg in result.split('#')[0].split()]
+
+                # expecting format like: whoami(1)
+                manpage = None
+                if command[-3] == '(' and command[-1] == ')':
+                    command, manpage = command[:-3], int(command[-2])
+
+                executable = shutil.which(command)
+
+                # TODO attrs + validator for text format
+                class PromptChoice(namedtuple('PromptChoice', ('text', 'handler'))):
+                    @property
+                    def key(self):
+                        return self.text[1]
+
+                choices = []
+                if manpage: choices.append(PromptChoice('[m]an page', lambda: subprocess.call(['man', str(manpage), command])))
+                if executable: choices.append(PromptChoice('[r]un', lambda: subprocess.call([command]+args)))
+
+                if choices:
+                    choices.append(PromptChoice('[q]uit', lambda: None))
+                    res = click.prompt(', '.join(p.text for p in choices), default='q',
+                                type=click.Choice([p.key for p in choices], case_sensitive=False),
+                                prompt_suffix='? ', show_choices=False)
+                    handler = next(c.handler for c in choices if c.key == res)
+                    handler()
 
 
 if __name__ == '__main__':

@@ -1,6 +1,5 @@
 #linux,freebsd
-route,netstat -r
-route -n,netstat -rn
+route,netstat(1) -r
 netstat -l,sockstat -l
 ip,ifconfig
 iptables,pf.conf(8)
