@@ -1,0 +1,6 @@
+#linux,freebsd
+/etc,/usr/local/etc
+/etc/hostname,/etc/rc.conf
+/etc/network/interfaces,/etc/rc.conf
+/etc/passwd,vipw(8) (/etc/passwd is generated!)
+/etc/apt/sources.list,/etc/pkg/repos/*

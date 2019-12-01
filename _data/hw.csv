@@ -1,3 +1,6 @@
 #linux,freebsd
 lspci,pciconf -lv
 lsusb,usbconfig
+modprobe,kldload
+lsmod,kldstat
+rmmod,kldunload

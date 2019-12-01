@@ -7,6 +7,23 @@ usermod,bsdconfig usermgmt
 usermod,pw usermod
 userdel,bsdconfig userdel
 userdel,pw userdel
-apt,pkg
-yum,pkg
-rpm,pkg
+apt,pkg(8)
+yum,pkg(8)
+rpm,pkg(8)
+pacman,pkg(8)
+fdisk,gpart(8)
+lvcreate,geom(8)
+lvcreate,gstripe(8)
+lvcreate,gmirror(8)
+lvcreate,zpool(8)
+mkfs,newfs(8)
+mkfs,zfs(8)
+mkfs,zpool(8)
+fsck,zpool scrub
+resize2fs,growfs(8)
+lsof,fstat(1)
+apt-get upgrade,freebsd-update(8)
+lsb-release,freebsd-version(1)
+systemctl,service(8)
+systemctl,rc.conf(5)
+system-config,bsdconfig(8)
